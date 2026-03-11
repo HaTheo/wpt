@@ -299,14 +299,15 @@
   }, "All unsupported protocols filtered results in TypeError.");
 
   promise_test(async (t) => {
-    const options = makeCreateOptions({
-      protocol: [],
-      requests: [
-        { protocol: "fake-protocol-1", data: {} },
-        { protocol: "fake-protocol-2", data: {} },
-        { protocol: "another-unknown", data: {} }
-      ]
-    });
+    const options = {
+      digital: {
+        requests: [
+          { protocol: "fake-protocol-1", data: {} },
+          { protocol: "fake-protocol-2", data: {} },
+          { protocol: "another-unknown", data: {} }
+        ]
+      }
+    };
     await promise_rejects_js(
       t,
       TypeError,
@@ -317,7 +318,12 @@
   promise_test(async (t) => {
     const abortController = new AbortController();
     const { signal } = abortController;
-    const options = makeCreateOptions({ signal });
+    const options = {
+      digital: {
+        requests: [{ protocol: "openid4vci", data: {} }]
+      },
+      signal
+    };
     await test_driver.bless("user activation");
     const promise = navigator.credentials.create(options);
     abortController.abort();
@@ -332,15 +338,16 @@
   promise_test(async (t) => {
     const abortController = new AbortController();
     const { signal } = abortController;
-    const options = makeCreateOptions({
-      protocol: [],
-      requests: [
-        { protocol: "unknown-protocol", data: {} },
-        makeCanonicalCreateRequest("openid4vci"),
-        { protocol: "another-fake", data: {} }
-      ],
+    const options = {
+      digital: {
+        requests: [
+          { protocol: "unknown-protocol", data: {} },
+          { protocol: "openid4vci", data: {} },
+          { protocol: "another-fake", data: {} }
+        ]
+      },
       signal
-    });
+    };
     await test_driver.bless("user activation");
     const promise = navigator.credentials.create(options);
     abortController.abort();
