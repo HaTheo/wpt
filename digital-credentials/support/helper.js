@@ -213,6 +213,17 @@ const allMappings = {
 };
 
 /**
+ * Internal helper to handle the shared logic for creating and getting credentials.
+ */
+function makeCanonicalRequest(type, protocol) {
+  const mapping = allMappings[type];
+  if (protocol in mapping) {
+    return mapping[protocol]();
+  }
+  throw new Error(`Unknown ${type} protocol: ${protocol}`);
+}
+
+/**
  * Creates a single canonical create request for a protocol.
  * Useful for tests that need to mix canonical requests with invalid/fake protocols.
  * @export
@@ -220,10 +231,7 @@ const allMappings = {
  * @returns {DigitalCredentialCreateRequest}
  */
 export function makeCanonicalCreateRequest(protocol) {
-  if (protocol in allMappings.create) {
-    return allMappings.create[protocol]();
-  }
-  throw new Error(`Unknown create protocol: ${protocol}`);
+  return makeCanonicalRequest('create', protocol);
 }
 
 /**
@@ -234,10 +242,7 @@ export function makeCanonicalCreateRequest(protocol) {
  * @returns {DigitalCredentialGetRequest}
  */
 export function makeCanonicalGetRequest(protocol) {
-  if (protocol in allMappings.get) {
-    return allMappings.get[protocol]();
-  }
-  throw new Error(`Unknown get protocol: ${protocol}`);
+  return makeCanonicalRequest('get', protocol);
 }
 
 /**
