@@ -225,7 +225,6 @@ function makeCanonicalRequest(type, protocol) {
 
 /**
  * Creates a single canonical create request for a protocol.
- * Useful for tests that need to mix canonical requests with invalid/fake protocols.
  * @export
  * @param {CreateProtocol} protocol
  * @returns {DigitalCredentialCreateRequest}
@@ -236,7 +235,6 @@ export function makeCanonicalCreateRequest(protocol) {
 
 /**
  * Creates a single canonical get request for a protocol.
- * Useful for tests that need to mix canonical requests with invalid/fake protocols.
  * @export
  * @param {GetProtocol} protocol
  * @returns {DigitalCredentialGetRequest}
