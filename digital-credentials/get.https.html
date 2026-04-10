@@ -221,7 +221,7 @@
   }, "navigator.credentials.get() promise is rejected if abort controller is aborted after call to get() in cross-origin iframe.");
 
   promise_test(async (t) => {
-    for (const mediation of ["silent", "optional", "conditional", "required"]) {
+    for (const mediation of ["silent", "optional", "required"]) {
       const abortController = new AbortController();
       const { signal } = abortController;
       await test_driver.bless("user activation");
@@ -233,6 +233,16 @@
       await promise_rejects_js(t, Error, requestPromise);
     }
   }, "Mediation is implicitly required and hence ignored. Request is aborted regardless.");
+
+  // https://www.w3.org/TR/credential-management-1/#algorithm-request step 8a
+  promise_test(async (t) => {
+    const options = makeGetOptions({ mediation: "conditional" });
+    await promise_rejects_js(
+      t,
+      TypeError,
+      navigator.credentials.get(options),
+    );
+  }, "navigator.credentials.get() rejects with TypeError when mediation is 'conditional' for digital credentials.");
 
 promise_test(async t => {
   const throwingValues = [
