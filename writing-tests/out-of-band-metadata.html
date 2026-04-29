@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Out-of-band Metadata &#8212; web-platform-tests  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="out-of-band-metadata">
+<h1>Out-of-band Metadata<a class="headerlink" href="#out-of-band-metadata" title="Link to this heading">¶</a></h1>
+<p>WPT uses two kinds of <a class="reference external" href="https://yaml.org/">YAML</a>-formatted text files to declare
+nonessential information about tests: <code class="docutils literal notranslate"><span class="pre">META.yml</span></code> and <code class="docutils literal notranslate"><span class="pre">WEB_FEATURES.yml</span></code>.</p>
+<section id="meta-yml">
+<h2><code class="docutils literal notranslate"><span class="pre">META.yml</span></code><a class="headerlink" href="#meta-yml" title="Link to this heading">¶</a></h2>
+<p>Files with this name may appear in any directory of the web-platform-tests.
+They may define any of the following properties:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">spec</span></code> - a link to the specification covered by the tests in the directory</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">suggested_reviewers</span></code> - a list of GitHub account username belonging to
+people who are notified when pull requests modify files in the directory</p></li>
+</ul>
+</section>
+<section id="web-features-yml">
+<h2><code class="docutils literal notranslate"><span class="pre">WEB_FEATURES.yml</span></code><a class="headerlink" href="#web-features-yml" title="Link to this heading">¶</a></h2>
+<p>Files with this name may appear in any directory that includes tests. They
+store a mapping between the tests in the local directory and <a class="reference external" href="https://github.com/web-platform-dx/web-features">the
+web-features</a> which those
+tests validate.</p>
+<p>They define one property, <code class="docutils literal notranslate"><span class="pre">features</span></code>, which is a list of rules that relate one
+web-feature to one or more tests in that directory. Each mapping rule includes
+two properties: <code class="docutils literal notranslate"><span class="pre">name</span></code> (whose value is the string identifier of a
+web-feature[^1]) and <code class="docutils literal notranslate"><span class="pre">files</span></code> (whose value is either the string value <code class="docutils literal notranslate"><span class="pre">**</span></code> or a
+list of file pattern strings).</p>
+<details>
+  <summary>Formal [CDDL](https://datatracker.ietf.org/doc/html/rfc8610) schema definition</summary><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MappingRules</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="n">features</span><span class="p">:</span> <span class="p">[</span><span class="o">*</span><span class="n">MappingRule</span><span class="p">],</span>
+<span class="p">}</span>
+
+<span class="n">MappingRule</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="n">name</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span>
+  <span class="n">files</span><span class="p">:</span> <span class="p">[</span><span class="o">*</span><span class="n">FilePattern</span><span class="p">],</span>
+<span class="p">}</span>
+
+<span class="n">FilePattern</span> <span class="o">=</span> <span class="n">text</span> <span class="o">.</span><span class="n">regexp</span> <span class="s2">&quot;!?[A-Za-z0-9_*.-]+&quot;</span>
+</pre></div>
+</div>
+</details><p>These files are used to generate a single JSON-formatted manifest file which
+relates web-feature IDs to literal test file names (rather than lists of
+patterns). Such a manifest is automatically generated for every commit made on
+WPT’s main development branch and included in <a class="reference external" href="https://github.com/web-platform-tests/wpt/releases">a corresponding
+release</a> under the name
+<code class="docutils literal notranslate"><span class="pre">WEB_FEATURES_MANIFEST</span></code> (available in a number of encodings).</p>
+<section id="file-patterns">
+<h3>File patterns<a class="headerlink" href="#file-patterns" title="Link to this heading">¶</a></h3>
+<p>If the <code class="docutils literal notranslate"><span class="pre">files</span></code> property takes the string value <code class="docutils literal notranslate"><span class="pre">**</span></code>, this signifies that all
+tests in the current directory and all subdirectories (if present) belong to
+the corresponding web-feature.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">files</span></code> property is a list of string values, the strings are interpreted
+as file patterns. Each contributes to the definition of a set of files which
+should be associated with the corresponding web-feature. While these “patterns”
+may be literal file names, they also support the following operators which
+alter their meaning:</p>
+<ul class="simple">
+<li><p>An asterisk appearing anywhere in the string (e.g. <code class="docutils literal notranslate"><span class="pre">foo-*.js</span></code>) is a
+placeholder for zero or more other characters. Patterns using a star can
+therefore describe multiple files.</p></li>
+<li><p>A leading exclamation point (e.g. <code class="docutils literal notranslate"><span class="pre">!foobar.html</span></code>) means, “<em>exclude</em> any file
+which matches the pattern.” This operator is intended to refine rules which
+also include patterns with the asterisk operator.</p></li>
+</ul>
+<p>If the <code class="docutils literal notranslate"><span class="pre">*</span></code> pattern appears as a list item, it will match all tests in the
+current directory; it will not match any subdirectories. There is no mechanism
+for matching specific subdirectories (only for matching <em>all</em> subdirectories
+via <code class="docutils literal notranslate"><span class="pre">**</span></code>). To define mappings for files in a given subdirectory, write mapping
+rules in a <code class="docutils literal notranslate"><span class="pre">WEB_FEATURES.yml</span></code> file within that subdirectory.</p>
+<p>The elements of the <code class="docutils literal notranslate"><span class="pre">files</span></code> list are applied from top to bottom to produce the
+set of files which belongs to a given web-feature. (The behavior of this list
+of file patterns is similar to how <a class="reference external" href="https://git-scm.com/docs/gitignore">the Git version control system interprets
+<code class="docutils literal notranslate"><span class="pre">.gitignore</span></code> files</a>.)</p>
+</section>
+<section id="caveat-pattern-matching">
+<h3>Caveat: Pattern Matching<a class="headerlink" href="#caveat-pattern-matching" title="Link to this heading">¶</a></h3>
+<p>Pattern matching allows classifiers to be resilient to expected changes in
+directory contents. This often occurs when file names have predictable file
+names according to:</p>
+<ul class="simple">
+<li><p>their intent (e.g. <code class="docutils literal notranslate"><span class="pre">shape-function-valid.html</span></code> and
+<code class="docutils literal notranslate"><span class="pre">shape-function-invalid.html</span></code>)</p></li>
+<li><p>their membership in a sequence (e.g. <code class="docutils literal notranslate"><span class="pre">float-023.xht</span></code>, <code class="docutils literal notranslate"><span class="pre">float-024.xht</span></code>, etc.)</p></li>
+<li><p><a class="reference external" href="https://web-platform-tests.org/writing-tests/file-names.html">their tentative
+status</a> (e.g.
+<code class="docutils literal notranslate"><span class="pre">offset_and_page_after_dispatch.tentative.html</span></code>)</p></li>
+</ul>
+<p>While the asterisk operator can improve concision and robustness in such cases,
+it also makes it easy to write classifiers that will include unrelated new
+tests. If there is a reasonable chance that future contributions may
+unintentionally match a given pattern, then a more restrictive pattern (or a
+list of literal file names) is likely preferable.</p>
+<p>For instance, the pattern <code class="docutils literal notranslate"><span class="pre">b*</span></code> might match a desired set of tests today, but it
+is susceptible to matching unrelated new tests added later. If a more
+restrictive pattern like <code class="docutils literal notranslate"><span class="pre">border-*</span></code> will suffice, it is generally preferable as
+a safer alternative.</p>
+</section>
+<section id="caveat-cross-cutting-tests">
+<h3>Caveat: Cross-cutting tests<a class="headerlink" href="#caveat-cross-cutting-tests" title="Link to this heading">¶</a></h3>
+<p>It is common for tests in web-platform-tests to validate the behavior of more
+than one web-feature. Rather than including such tests in multiple
+classifications, it is generally preferable to avoid classifying them at all.
+(It may be possible to refactor tests like this into multiple files that each
+focus on a single web-feature, but that work is not considered a high
+priority.)</p>
+</section>
+<section id="example-1-mapping-an-entire-directory-to-a-single-web-feature">
+<h3>Example 1: Mapping an entire directory to a single web-feature<a class="headerlink" href="#example-1-mapping-an-entire-directory-to-a-single-web-feature" title="Link to this heading">¶</a></h3>
+<p>For example, if the directory named <code class="docutils literal notranslate"><span class="pre">fetch/</span></code> contained only tests for <a class="reference external" href="https://web-platform-dx.github.io/web-features-explorer/features/fetch/">the
+<code class="docutils literal notranslate"><span class="pre">fetch</span></code>
+web-feature</a>,
+then that directory might include a <code class="docutils literal notranslate"><span class="pre">WEB_FEATURES.yml</span></code> file whose content
+appears as follows:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">features</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fetch</span>
+<span class="w">  </span><span class="nt">files</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;**&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="example-2-mapping-tests-within-a-directory-to-many-web-features">
+<h3>Example 2: Mapping tests within a directory to many web-features<a class="headerlink" href="#example-2-mapping-tests-within-a-directory-to-many-web-features" title="Link to this heading">¶</a></h3>
+<p>Given a directory with the following entries:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">crashtests/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">resources/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">META.yml</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">WEB_FEATURES.yml</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">aspect-ratio1.html</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">aspect-ratio2.html</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ar1.html</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ar1-ref.html</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ar2.html</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ar2-ref.html</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">box-sizing-1.html</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">box-sizing-2.html</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">box-sizing-3.js</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">z-index.html</span></code></p></li>
+</ul>
+<p>The contents of the file named <code class="docutils literal notranslate"><span class="pre">WEB_FEATURES.yml</span></code> might appear as follows:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">features</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">aspect-ratio</span>
+<span class="w">  </span><span class="nt">files</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;*&quot;</span><span class="w">              </span><span class="c1"># This line includes all test files in the directory</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;!box-sizing-*&quot;</span><span class="w">  </span><span class="c1"># This line excludes all test files whose name begins with &quot;box-sizing&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;!z-index.html&quot;</span><span class="w">  </span><span class="c1"># This line excludes the test file named &quot;z-index.html&quot;</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">box-sizing</span>
+<span class="w">  </span><span class="nt">files</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">box-sizing-*</span><span class="w">  </span><span class="c1"># This line includes all test files whose name begins with &quot;box-sizing&quot;</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">z-index</span>
+<span class="w">  </span><span class="nt">files</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">z-index.html</span><span class="w">  </span><span class="c1"># This line includes the test file named &quot;z-index.html&quot;</span>
+</pre></div>
+</div>
+<p>[^1]: The web-feature identifier is distinct from the web-feature name.
+Although the property is “name”, its value should actually be the
+identifier.</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">web-platform-tests</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../test-suite-design.html">Test Suite Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro-video-transcript.html">“Introduction to WPT” video transcript</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../running-tests/index.html">Running Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Writing Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reviewing-tests/index.html">Reviewing Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../admin/index.html">Project Administration</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2019, wpt contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/writing-tests/out-of-band-metadata.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

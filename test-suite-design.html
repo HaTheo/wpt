@@ -60,13 +60,9 @@ the filesystem, and is preferred for larger specifications.</p>
 <p>For example, tests in HTML for <a class="reference external" href="https://html.spec.whatwg.org/multipage/history.html#the-history-interface">“The History
 interface”</a>
 are located in <code class="docutils literal notranslate"><span class="pre">html/browsers/history/the-history-interface/</span></code>.</p>
-<p>Many directories also include a file named <code class="docutils literal notranslate"><span class="pre">META.yml</span></code>. This file may define any
-of the following properties:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">spec</span></code> - a link to the specification covered by the tests in the directory</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">suggested_reviewers</span></code> - a list of GitHub account username belonging to
-people who are notified when pull requests modify files in the directory</p></li>
-</ul>
+<p>Many directories also include files named <code class="docutils literal notranslate"><span class="pre">META.yml</span></code> and/or <code class="docutils literal notranslate"><span class="pre">WEB_FEATURES.yml</span></code>.
+These files contain test metadata; please refer to <a class="reference internal" href="writing-tests/out-of-band-metadata.html"><span class="doc">Out-of-band
+Metadata</span></a> for more information about their purpose and format.</p>
 <p>Various resources that tests depend on are in <code class="docutils literal notranslate"><span class="pre">common</span></code>, <code class="docutils literal notranslate"><span class="pre">images</span></code>, <code class="docutils literal notranslate"><span class="pre">fonts</span></code>,
 <code class="docutils literal notranslate"><span class="pre">media</span></code>, and <code class="docutils literal notranslate"><span class="pre">resources</span></code>.</p>
 </section>
