@@ -214,11 +214,14 @@ const allMappings = {
 
 /**
  * Internal helper to handle the shared logic for creating and getting credentials.
+ * @param {"get" | "create"} type
+ * @param {Protocol} protocol
+ * @returns {DigitalCredentialGetRequest | DigitalCredentialCreateRequest}
  */
 function makeCanonicalRequest(type, protocol) {
   const mapping = allMappings[type];
   if (protocol in mapping) {
-    return mapping[protocol]();
+    return mapping[/** @type {keyof typeof mapping} */ (protocol)]();
   }
   throw new Error(`Unknown ${type} protocol: ${protocol}`);
 }
