@@ -19,11 +19,15 @@
     await test_driver.bless("user activation for first request");
     const firstRequest = navigator.credentials.get(firstOptions);
 
-    // Fresh user activation ensures any rejection is due to the pending
-    // request, not lack of user activation (both would be NotAllowedError)
-    await test_driver.bless("user activation for second request");
-    assert_true(navigator.userActivation.isActive);
-    const secondRequest = navigator.credentials.get(secondOptions);
+    // Use bless's action callback so the second get() is called within
+    // the same microtask as activation grant. This prevents the first
+    // request's IPC response from completing (clearing the pending state
+    // in the browser process) before the second call is dispatched.
+    let secondRequest;
+    await test_driver.bless("user activation for second request", () => {
+      assert_true(navigator.userActivation.isActive);
+      secondRequest = navigator.credentials.get(secondOptions);
+    });
 
     await promise_rejects_dom(
       t,
