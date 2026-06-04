@@ -77,7 +77,7 @@ promise_test(async t => {
     );
   }
 
-  assert_unreached("No rate limit reached after 500 fragment navigations.");
+  assert_unreached("No rate limit reached.");
 }, "fragment navigations through navigate are ignored after too many calls");
 </script>
 </body>
