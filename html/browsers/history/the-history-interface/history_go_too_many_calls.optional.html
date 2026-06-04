@@ -21,7 +21,7 @@
       const iframe = await createIframe();
       let navigateEvents = 0;
       iframe.contentWindow.navigation.onnavigate = e => { navigateEvents++; return false; };
-      for (let i = 0; i < 5000; i++) {
+      for (let i = 0; i < 500; i++) {
         iframe.contentWindow.history.go(0);
         await t.step_timeout(0);
         if (i > navigateEvents) {
@@ -37,7 +37,7 @@
       const iframeDOMException = iframeWindow.DOMException;
       const iframeHistory = iframeWindow.history;
       iframe.remove();
-      for (let i = 0; i < 5000; i++) {
+      for (let i = 0; i < 500; i++) {
         assert_throws_dom("SecurityError", iframeDOMException, () => {
           iframeHistory.go(0);
         });

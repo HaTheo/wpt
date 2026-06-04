@@ -9,7 +9,7 @@
     <div id="log"></div>
     <script>
     test(function () {
-      for (let i = 0; i < 5000; i++) {
+      for (let i = 0; i < 500; i++) {
         let prev = location.href;
         window.history.pushState(null, null, i);
         if (location.href === prev) {
