@@ -38,7 +38,7 @@
       const iframeHistory = iframeWindow.history;
       iframe.remove();
       for (let i = 0; i < 5000; i++) {
-        assert_throws_dom("SecurityError", iframeDOMException.constructor, () => {
+        assert_throws_dom("SecurityError", iframeDOMException, () => {
           iframeHistory.go(0);
         });
       }
