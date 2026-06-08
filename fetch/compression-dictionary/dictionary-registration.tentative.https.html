@@ -79,8 +79,12 @@ compression_dictionary_promise_test(async (t) => {
 
   const entries = performance.getEntriesByName(dictionaryUrl);
   assert_equals(entries.length, 2);
-  assert_not_equals(entries[0].transferSize, 0);
-  assert_equals(entries[1].transferSize, 0);
+
+  // transferSize should be either 0 or 300 when hitting cache and 300 + encoded size otherwise.
+  // See https://github.com/web-platform-tests/wpt/issues/60428
+  const encodedSize = "This is a test dictionary.\n".length;
+  assert_equals(entries[0].transferSize, 300 + encodedSize, 0, "Initial compression dictionary triggered a network load.");
+  assert_in_array(entries[1].transferSize, [0, 300], "Second compression dictionary hit cache.");
 }, 'Dictionary registration does not invalidate cache entry');
 
 compression_dictionary_promise_test(async (t) => {
