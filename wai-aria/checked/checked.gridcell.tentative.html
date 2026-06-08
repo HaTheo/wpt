@@ -1,0 +1,35 @@
+<!doctype html>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/resources/testdriver.js"></script>
+<script src="/resources/testdriver-vendor.js"></script>
+<script src="/resources/testdriver-actions.js"></script>
+<script src="/wai-aria/scripts/aria-utils.js"></script>
+
+<div role="grid" aria-label="Gridcell aria-checked tests">
+  <div role="row">
+    <div data-testname="gridcell with aria-checked true" role="gridcell" aria-checked="true" data-expectedproperties='{ "checked": "true" }' class="ex-props">gridcell with aria-checked true</div>
+  </div>
+  <div role="row">
+    <div data-testname="gridcell with aria-checked false" role="gridcell" aria-checked="false" data-expectedproperties='{ "checked": "false" }' class="ex-props">gridcell with aria-checked false</div>
+  </div>
+  <div role="row">
+    <div data-testname="gridcell with aria-checked mixed" role="gridcell" aria-checked="mixed" data-expectedproperties='{ "checked": "mixed" }' class="ex-props">gridcell with aria-checked mixed</div>
+  </div>
+</div>
+
+<div role="grid" aria-label="Row aria-checked tests">
+  <div data-testname="row with aria-checked true" role="row" aria-checked="true" data-expectedproperties='{ "checked": "true" }' class="ex-props">
+    <div role="gridcell">row with aria-checked true</div>
+  </div>
+  <div data-testname="row with aria-checked false" role="row" aria-checked="false" data-expectedproperties='{ "checked": "false" }' class="ex-props">
+    <div role="gridcell">row with aria-checked false</div>
+  </div>
+  <div data-testname="row with aria-checked mixed" role="row" aria-checked="mixed" data-expectedproperties='{ "checked": "mixed" }' class="ex-props">
+    <div role="gridcell">row with aria-checked mixed</div>
+  </div>
+</div>
+
+<script>
+AriaUtils.verifyPropertiesBySelector(".ex-props");
+</script>
