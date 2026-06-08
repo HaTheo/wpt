@@ -1,0 +1,42 @@
+<!doctype html>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/resources/testdriver.js"></script>
+<script src="/resources/testdriver-vendor.js"></script>
+<script src="/resources/testdriver-actions.js"></script>
+<script src="/wai-aria/scripts/aria-utils.js"></script>
+
+<div id="tree" role="tree">
+  <div role="treeitem" aria-level="1">Fruits</div>
+  <div role="treeitem" aria-level="2">Apples</div>
+  <div role="treeitem" aria-level="2">Pears</div>
+  <div role="treeitem" aria-level="2">Oranges</div>
+  <div role="treeitem" aria-level="1">Vegetables</div>
+  <div role="treeitem" aria-level="2">Carrots</div>
+  <div role="treeitem" aria-level="2">Broccoli</div>
+  <div role="treeitem" aria-level="2">Spinach</div>
+</div>
+
+<script>
+
+AriaUtils.verifyAccessibilitySubtree("#tree", {
+  role: "tree",
+  children: [
+    { role: "treeitem", label: "Fruits", level: 1,
+      children: [
+        { role: "treeitem", label: "Apples", level: 2, children: [] },
+        { role: "treeitem", label: "Pears", level: 2, children: [] },
+        { role: "treeitem", label: "Oranges", level: 2, children: [] },
+      ],
+    },
+    { role: "treeitem", label: "Vegetables", level: 1,
+      children: [
+        { role: "treeitem", label: "Carrots", level: 2, children: [] },
+        { role: "treeitem", label: "Broccoli", level: 2, children: [] },
+        { role: "treeitem", label: "Spinach", level: 2, children: [] },
+      ],
+    },
+  ],
+});
+
+</script>
