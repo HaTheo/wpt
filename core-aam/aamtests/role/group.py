@@ -32,4 +32,3 @@ def test_uia(uia, session, inline):
 
     node = uia.find_node("test", session.url)
     assert uia.get_control_type(node) == "Group"
-    

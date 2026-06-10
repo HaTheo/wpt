@@ -22,7 +22,7 @@ _automation = comtypes.client.CreateObject(
     UIA.CUIAutomation, interface=UIA.IUIAutomation
 )
 
-# ----  Maps for turning UIA constants into human readable names. 
+# ----  Maps for turning UIA constants into human readable names.
 
 # Generate a mapping of control type id to human readable name, e.g. 50000 -> "Button", 50001 -> "Calendar", etc.
 UIA_CONTROL_TYPE_MAP = {
@@ -90,7 +90,7 @@ class UiaWrapper(ApiWrapper[UiaElement]):
         :returns: The human readable UIA control type name, e.g. "Button" or "Group".
         """
         return UIA_CONTROL_TYPE_MAP.get(element.CurrentControlType, str(element.CurrentControlType))
-    
+
     def get_Landmark_type(self, element: UiaElement) -> str:
         """
         :param element: The element to read from.
