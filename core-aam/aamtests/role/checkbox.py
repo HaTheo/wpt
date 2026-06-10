@@ -26,9 +26,13 @@ def test_atspi(atspi, session, inline):
 #     # Role: ROLE_SYSTEM_CHECKBUTTON
 #     # See also: aria-checked in the State and Property Mapping Tables
 
-# def test_uia(uia, session, inline):
-#     session.url = inline(TEST_HTML)
-#
-#     # Spec:
-#     # Control Type: Checkbox
-#     # See also: aria-checked in the State and Property Mapping Tables
+def test_uia(uia, session, inline):
+    session.url = inline(TEST_HTML)
+
+    # Spec:
+    # Control Type: Checkbox
+    # See also: aria-checked in the State and Property Mapping Tables
+
+    node = uia.find_node("test", session.url)
+    assert uia.get_control_type(node) == "Checkbox"
+    #Todo: add assertions for the state of the checkbox

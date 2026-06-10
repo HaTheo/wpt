@@ -34,7 +34,7 @@ def test_uia(uia, session, inline):
     # Spec:
     # Control Type: Group
     # Localized Control Type: article
+
     node = uia.find_node("test", session.url)
     assert uia.get_control_type(node) == "Group"
     assert uia.get_property(node, "LocalizedControlType") == "article"
-

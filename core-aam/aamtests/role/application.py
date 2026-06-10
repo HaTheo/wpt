@@ -30,7 +30,7 @@ def test_uia(uia, session, inline):
     # Spec:
     # Control Type: Pane
     # Localized Control Type: application
+
     node = uia.find_node("test", session.url)
     assert uia.get_control_type(node) == "Pane"
     assert uia.get_property(node, "LocalizedControlType") == "application"
-

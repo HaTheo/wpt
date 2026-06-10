@@ -26,9 +26,14 @@ def test_atspi(atspi, session, inline):
 #     # Role: IA2_ROLE_TEXT_FRAME
 #     # Text Attribute: text-position:super
 
-# def test_uia(uia, session, inline):
-#     session.url = inline(TEST_HTML)
-#
-#     # Spec:
-#     # Control Type: Text
-#     # Styles used are exposed by IsSuperscript attribute of the TextRange Control Pattern implemented on the accessible object.: IsSuperscript: attribute of the TextRange Control Pattern implemented on the accessible object.
+def test_uia(uia, session, inline):
+    session.url = inline(TEST_HTML)
+
+    # Spec:
+    # Control Type: Text
+    # Styles used are exposed by IsSuperscript attribute of the TextRange Control Pattern implemented on the accessible object.: IsSuperscript: attribute of the TextRange Control Pattern implemented on the accessible object.
+
+    node = uia.find_node("test", session.url)
+    assert uia.get_control_type(node) == "Text"
+    #Todo: add TextRange Control Pattern assertions here
+
