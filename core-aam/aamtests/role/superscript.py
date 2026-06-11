@@ -35,5 +35,7 @@ def test_uia(uia, session, inline):
 
     node = uia.find_node("test", session.url)
     assert uia.get_control_type(node) == "Text"
-    #Todo: add TextRange Control Pattern assertions here
+    patterns = uia.get_supported_patterns(node)
+    assert "Text" in patterns
 
+    #Todo: Full Text patern support: Add ability to assess control patern for superscript

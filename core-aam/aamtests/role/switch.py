@@ -41,5 +41,7 @@ def test_uia(uia, session, inline):
     node = uia.find_node("test", session.url)
     assert uia.get_control_type(node) == "Button"
     assert uia.get_property(node, "LocalizedControlType") == "toggleswitch"
-    #Todo: add toggle pattern assertions here
-    #Todo: add aria-checked state and property assertions here
+    patterns = uia.get_supported_patterns(node)
+    assert "Toggle" in patterns
+
+    #Todo: Full Toggle patern support: support for toggleState prop/expect default(false)

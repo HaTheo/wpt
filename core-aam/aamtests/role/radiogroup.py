@@ -29,12 +29,6 @@ def test_uia(uia, session, inline):
 
     # Spec:
     # Control Type: List
-    # Control Pattern: Selection
-    # See also: aria-checked in the State and Property Mapping Tables
 
     node = uia.find_node("test", session.url)
     assert uia.get_control_type(node) == "List"
-    #Todo: add SelectionItem Control Pattern assertions here
-    #Todo: add aria-checked state and property assertions here
-
-

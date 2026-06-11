@@ -114,6 +114,22 @@ class UiaWrapper(ApiWrapper[UiaElement]):
             raise ValueError(f"Unknown UIA property name: {property_name}")
         return element.GetCurrentPropertyValue(property_id)
 
+    def get_supported_patterns(self, element: UiaElement):
+        supported_patterns = []
+        
+        for pattern_id, pattern_name in UIA_PATTERN_ID_MAP.items():
+            try:
+                # Native COM returns a valid pointer object if supported.
+                # If NOT supported, the native layer throws an HRESULT/COMError.
+                pattern_obj = element.GetCurrentPattern(pattern_id)
+                
+                if pattern_obj:
+                    supported_patterns.append(pattern_name)
+            except (comtypes.COMError, Exception):
+                # Native UIA explicitly fails with an error code if the control doesn't support the pattern.
+                continue
+        return supported_patterns
+
     def _find_browser(self) -> Optional[UiaElement]:
         """Find the UIA element representing the browser's top level window.
 
