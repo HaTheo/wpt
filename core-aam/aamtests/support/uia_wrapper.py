@@ -116,13 +116,13 @@ class UiaWrapper(ApiWrapper[UiaElement]):
 
     def get_supported_patterns(self, element: UiaElement):
         supported_patterns = []
-        
+
         for pattern_id, pattern_name in UIA_PATTERN_ID_MAP.items():
             try:
                 # Native COM returns a valid pointer object if supported.
                 # If NOT supported, the native layer throws an HRESULT/COMError.
                 pattern_obj = element.GetCurrentPattern(pattern_id)
-                
+
                 if pattern_obj:
                     supported_patterns.append(pattern_name)
             except (comtypes.COMError, Exception):
