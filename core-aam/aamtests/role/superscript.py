@@ -35,7 +35,7 @@ def test_uia(uia, session, inline):
 
     node = uia.find_node("test", session.url)
     assert uia.get_control_type(node) == "Text"
-    patterns = uia.get_supported_patterns(node)
-    assert "Text" in patterns
+
+    assert "Text" in uia.get_supported_patterns(node)
 
     #Todo: Full Text patern support: Add ability to assess control patern for superscript

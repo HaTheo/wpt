@@ -36,6 +36,7 @@ def test_uia(uia, session, inline):
     assert uia.get_control_type(node) == "DataItem"
     assert uia.get_property(node, "LocalizedControlType") == "row"
     patterns = uia.get_supported_patterns(node)
-    assert "SelectionItem" in patterns
 
-    #Todo: Full SelectionItem patern support: support for isSelected prop/expect default(false)
+    assert "SelectionItem" in patterns
+    selection_pattern_attr = uia.get_pattern_attr(node, "SelectionItem")
+    assert selection_pattern_attr["IsSelected"] == 0

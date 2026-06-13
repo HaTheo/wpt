@@ -38,8 +38,11 @@ def test_uia(uia, session, inline):
     node = uia.find_node("test", session.url)
     assert uia.get_control_type(node) == "RadioButton"
     patterns = uia.get_supported_patterns(node)
-    assert "Toggle" in patterns
-    assert "SelectionItem" in patterns
 
-    #Todo: Full Toggle patern support: support for toggleState prop/expect default(false)
-    #Todo: Full SelectionItem patern support: support for isSelected prop/expect default(false)
+    assert "Toggle" in patterns
+    toggle_pattern_attr = uia.get_pattern_attr(node, "Toggle")
+    assert toggle_pattern_attr["ToggleState"] == 0
+
+    assert "SelectionItem" in patterns
+    selection_pattern_attr = uia.get_pattern_attr(node, "SelectionItem")
+    assert selection_pattern_attr["IsSelected"] == 0

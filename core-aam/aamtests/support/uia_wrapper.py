@@ -115,6 +115,11 @@ class UiaWrapper(ApiWrapper[UiaElement]):
         return element.GetCurrentPropertyValue(property_id)
 
     def get_supported_patterns(self, element: UiaElement):
+        """returns an array of human readable supportable patterns for the element.
+
+        :param element: The element to read from.
+        :returns: array of human readable supported paterns
+        """
         supported_patterns = []
 
         for pattern_id, pattern_name in UIA_PATTERN_ID_MAP.items():
@@ -129,6 +134,52 @@ class UiaWrapper(ApiWrapper[UiaElement]):
                 # Native UIA explicitly fails with an error code if the control doesn't support the pattern.
                 continue
         return supported_patterns
+    
+    def get_pattern_attr(self, element: UiaElement, pattern: str) -> List[str]:
+        """Return a list of attribute/method names for a supported pattern on the element.
+
+        :param element: The element to query.
+        :param pattern: The human readable pattern name, e.g. "InvokePattern".
+        :returns: List of attribute/method names exposed by the pattern object, or [] if unsupported.
+        """
+        # Find the pattern id by name
+        pattern_id = next(
+            (id for id, name in UIA_PATTERN_ID_MAP.items() if name == pattern),
+            None,
+        )
+        
+        if pattern_id is None:
+            raise ValueError(f"Unknown UIA pattern name: {pattern}")
+
+        try:
+            pattern_obj = element.GetCurrentPattern(pattern_id)
+
+            #Pattern not supported
+            if not pattern_obj:
+                raise ValueError(f"{pattern} pattern is not supported")
+
+            #Toggle Pattern
+            if pattern_id == UIA.UIA_TogglePatternId :
+                togglePatern = pattern_obj.QueryInterface(comtypes.gen.UIAutomationClient.IUIAutomationTogglePattern)
+                #print(f"ToggleState: {togglePatern.CurrentToggleState}")
+                return {"ToggleState": togglePatern.CurrentToggleState} # or element.GetCurrentPropertyValue(UIA.UIA_ToggleToggleStatePropertyId)
+
+            #Selection Item Pattern
+            elif pattern_id == UIA.UIA_SelectionItemPatternId :
+                selectionPatern = pattern_obj.QueryInterface(comtypes.gen.UIAutomationClient.IUIAutomationSelectionItemPattern)
+                return {"IsSelected": selectionPatern.CurrentIsSelected} # or element.GetCurrentPropertyValue(UIA.UIA_SelectionItemIsSelectedPropertyId)
+
+            #Text Pattern
+            elif pattern_id == UIA.UIA_TextPatternId :
+                TextPatern = pattern_obj.QueryInterface(comtypes.gen.UIAutomationClient.IUIAutomationTextPattern)
+                text_range = TextPatern.DocumentRange
+                return {
+                    "IsSuperscript": text_range.GetAttributeValue(UIA.UIA_IsSuperscriptAttributeId),
+                    "IsSubscript": text_range.GetAttributeValue(UIA.UIA_IsSubscriptAttributeId)
+                }
+        except (comtypes.COMError, Exception):
+            return []
+
 
     def _find_browser(self) -> Optional[UiaElement]:
         """Find the UIA element representing the browser's top level window.
