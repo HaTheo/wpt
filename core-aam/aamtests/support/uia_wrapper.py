@@ -4,7 +4,6 @@ from typing import Any, Optional
 
 import comtypes
 import comtypes.client
-from comtypes.client import GetModule, CreateObject
 
 from .api_wrapper import ApiWrapper
 
@@ -37,6 +36,7 @@ UIA_PROPERTY_ID_MAP = {
     for name, value in vars(UIA).items()
     if name.startswith("UIA_") and name.endswith("PropertyId")
 }
+UIA_PROPERTY_NAME_MAP = {name: value for value, name in UIA_PROPERTY_ID_MAP.items()}
 
 # Generate a mapping of event id to human readable name, e.g. 20000 -> "AutomationFocusChangedEvent", 20001 -> "AutomationPropertyChangedEvent", etc.
 UIA_EVENT_ID_MAP = {
@@ -91,12 +91,13 @@ class UiaWrapper(ApiWrapper[UiaElement]):
         """
         return UIA_CONTROL_TYPE_MAP.get(element.CurrentControlType, str(element.CurrentControlType))
 
-    def get_Landmark_type(self, element: UiaElement) -> str:
+    def get_landmark_type(self, element: UiaElement) -> str:
         """
         :param element: The element to read from.
         :returns: The human readable UIA landmark type name, e.g. "Custom" or "Form".
         """
-        return UIA_LANDMARK_TYPE_ID_MAP.get(self.get_property(element, "LandmarkType"), str(self.get_property(element, "LandmarkType")))
+        landmark_type = self.get_property(element, "LandmarkType")
+        return UIA_LANDMARK_TYPE_ID_MAP.get(landmark_type, str(landmark_type))
 
     def get_property(self, element: UiaElement, property_name: str) -> Any:
         """Read a UIA property by human readable name, e.g. "LocalizedControlType".
@@ -106,15 +107,12 @@ class UiaWrapper(ApiWrapper[UiaElement]):
             "LocalizedControlType".
         :returns: The current value of the property.
         """
-        property_id = next(
-            (id for id, name in UIA_PROPERTY_ID_MAP.items() if name == property_name),
-            None
-        )
+        property_id = UIA_PROPERTY_NAME_MAP.get(property_name)
         if property_id is None:
             raise ValueError(f"Unknown UIA property name: {property_name}")
         return element.GetCurrentPropertyValue(property_id)
 
-    def get_supported_patterns(self, element: UiaElement):
+    def get_supported_patterns(self, element: UiaElement) -> list[str]:
         """returns an array of human readable supportable patterns for the element.
 
         :param element: The element to read from.
@@ -130,55 +128,63 @@ class UiaWrapper(ApiWrapper[UiaElement]):
 
                 if pattern_obj:
                     supported_patterns.append(pattern_name)
-            except (comtypes.COMError, Exception):
+            except comtypes.COMError:
                 # Native UIA explicitly fails with an error code if the control doesn't support the pattern.
                 continue
         return supported_patterns
-    
-    def get_pattern_attr(self, element: UiaElement, pattern: str) -> List[str]:
-        """Return a list of attribute/method names for a supported pattern on the element.
+
+    def get_pattern_attr(
+        self, element: UiaElement, pattern: str
+    ) -> Optional[dict[str, Any]]:
+        """Return selected attributes for a supported pattern on the element.
 
         :param element: The element to query.
         :param pattern: The human readable pattern name, e.g. "InvokePattern".
-        :returns: List of attribute/method names exposed by the pattern object, or [] if unsupported.
+        :returns: A dictionary of selected pattern attributes, or None if unsupported.
         """
-        # Find the pattern id by name
         pattern_id = next(
             (id for id, name in UIA_PATTERN_ID_MAP.items() if name == pattern),
             None,
         )
-        
+
         if pattern_id is None:
             raise ValueError(f"Unknown UIA pattern name: {pattern}")
 
         try:
             pattern_obj = element.GetCurrentPattern(pattern_id)
 
-            #Pattern not supported
             if not pattern_obj:
-                raise ValueError(f"{pattern} pattern is not supported")
+                return None
 
-            #Toggle Pattern
-            if pattern_id == UIA.UIA_TogglePatternId :
-                togglePatern = pattern_obj.QueryInterface(comtypes.gen.UIAutomationClient.IUIAutomationTogglePattern)
-                #print(f"ToggleState: {togglePatern.CurrentToggleState}")
-                return {"ToggleState": togglePatern.CurrentToggleState} # or element.GetCurrentPropertyValue(UIA.UIA_ToggleToggleStatePropertyId)
+            if pattern_id == UIA.UIA_TogglePatternId:
+                toggle_pattern = pattern_obj.QueryInterface(
+                    UIA.IUIAutomationTogglePattern
+                )
+                return {"ToggleState": toggle_pattern.CurrentToggleState}
 
-            #Selection Item Pattern
-            elif pattern_id == UIA.UIA_SelectionItemPatternId :
-                selectionPatern = pattern_obj.QueryInterface(comtypes.gen.UIAutomationClient.IUIAutomationSelectionItemPattern)
-                return {"IsSelected": selectionPatern.CurrentIsSelected} # or element.GetCurrentPropertyValue(UIA.UIA_SelectionItemIsSelectedPropertyId)
+            if pattern_id == UIA.UIA_SelectionItemPatternId:
+                selection_pattern = pattern_obj.QueryInterface(
+                    UIA.IUIAutomationSelectionItemPattern
+                )
+                return {"IsSelected": selection_pattern.CurrentIsSelected}
 
-            #Text Pattern
-            elif pattern_id == UIA.UIA_TextPatternId :
-                TextPatern = pattern_obj.QueryInterface(comtypes.gen.UIAutomationClient.IUIAutomationTextPattern)
-                text_range = TextPatern.DocumentRange
+            if pattern_id == UIA.UIA_TextPatternId:
+                text_pattern = pattern_obj.QueryInterface(
+                    UIA.IUIAutomationTextPattern
+                )
+                text_range = text_pattern.DocumentRange
                 return {
-                    "IsSuperscript": text_range.GetAttributeValue(UIA.UIA_IsSuperscriptAttributeId),
-                    "IsSubscript": text_range.GetAttributeValue(UIA.UIA_IsSubscriptAttributeId)
+                    "IsSuperscript": text_range.GetAttributeValue(
+                        UIA.UIA_IsSuperscriptAttributeId
+                    ),
+                    "IsSubscript": text_range.GetAttributeValue(
+                        UIA.UIA_IsSubscriptAttributeId
+                    ),
                 }
-        except (comtypes.COMError, Exception):
-            return []
+        except comtypes.COMError:
+            return None
+
+        return None
 
 
     def _find_browser(self) -> Optional[UiaElement]:
@@ -213,7 +219,7 @@ class UiaWrapper(ApiWrapper[UiaElement]):
         element = walker.GetFirstChildElement(root)
         while element:
             name = element.CurrentName or ""
-            if self.product_name in name.lower():
+            if self.product_name.lower() in name.lower():
                 return element
             element = walker.GetNextSiblingElement(element)
         return None
