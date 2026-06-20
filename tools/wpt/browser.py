@@ -1905,6 +1905,26 @@ class Edge(Browser):
         "Darwin": "macos"
     }.get(uname[0])
 
+    def _edge_app_name(self, channel=None):
+        suffix = ""
+        if channel in ("beta", "dev", "canary"):
+            suffix = " " + channel.capitalize()
+        return f"Microsoft Edge{suffix}"
+
+    def _find_binary_in_directory(self, directory, channel=None):
+        """Search for an Edge browser binary in a given directory."""
+        app_name = self._edge_app_name(channel)
+
+        if self.platform == "macos":
+            mac_path = os.path.join(directory, f"{app_name}.app", "Contents", "MacOS")
+            return which(app_name, path=mac_path)
+
+        elif self.platform == "windows":
+            return which("msedge.exe", path=directory)
+
+        else:
+            return which("msedge", path=directory)
+
     def _get_build_version(self, version):
         """Convert a Edge/MSEdgeDriver version into MAJOR.MINOR.BUILD format."""
         version_parts = version.split(".")
@@ -1973,7 +1993,11 @@ class Edge(Browser):
             return None
 
     def find_binary(self, venv_path=None, channel=None):
-        # TODO: Check for binary in virtual environment first
+        # Check for binary in venv first.
+        path = self._find_binary_in_directory(self._get_browser_binary_dir(venv_path, channel))
+        if path is not None:
+            return path
+
         if self.platform == "linux":
             name = "microsoft-edge"
             if channel == "stable":
@@ -1985,6 +2009,12 @@ class Edge(Browser):
             # No Canary on Linux.
             return which(name)
         if self.platform == "macos":
+            # app_name = self._edge_app_name(channel)
+            # return which(app_name,
+            #              path=os.path.join("/Applications",
+            #                                f"{app_name}.app",
+            #                                "Contents",
+            #                                "MacOS"))
             suffix = ""
             if channel in ("beta", "dev", "canary"):
                 suffix = " " + channel.capitalize()

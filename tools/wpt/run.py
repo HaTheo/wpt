@@ -723,6 +723,21 @@ class Edge(ChromeAndEdgeSetup):
     browser_cls = browser.Edge
     webdriver_name = "msedgedriver"
 
+    def setup_kwargs(self, kwargs):
+        channel = kwargs["browser_channel"]
+
+        if kwargs["binary"] is None:
+            kwargs["binary"] = self.browser.find_binary(channel=channel)
+
+        if kwargs["binary"] is None and channel in ("nightly", "preview", "experimental"):
+            kwargs["binary"] = self.browser.find_binary(channel="stable")
+
+        super().setup_kwargs(kwargs)
+
+        if kwargs.get("headless") is None and not kwargs.get("debug_test"):
+            kwargs["headless"] = True
+            logger.info("Running in headless mode, pass --no-headless to disable")
+
 
 class Safari(BrowserSetup):
     name = "safari"

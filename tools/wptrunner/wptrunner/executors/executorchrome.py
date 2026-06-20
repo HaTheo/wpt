@@ -15,6 +15,7 @@ from .base import strip_server
 from .executorwebdriver import (
     WebDriverBaseProtocolPart,
     WebDriverCrashtestExecutor,
+    WebDriverAccessibilityProtocolPart,
     WebDriverFedCMProtocolPart,
     WebDriverPrintRefTestExecutor,
     WebDriverProtocol,
@@ -191,6 +192,103 @@ class ChromeDriverFedCMProtocolPart(WebDriverFedCMProtocolPart):
                                                    f"{self.parent.vendor_prefix}/fedcm/confirmidplogin")
 
 
+class ChromeDriverAccessibilityProtocolPart(WebDriverAccessibilityProtocolPart):
+    def setup(self):
+        super().setup()
+        self._nodes_by_id = {}
+
+    def get_accessibility_properties_for_element(self, element):
+        self.webdriver.execute_script(
+            "window.__wptrunner_accessibility_element = arguments[0];",
+            args=[element])
+        
+        remote_object = self.parent.cdp.execute_cdp_command(
+            "Runtime.evaluate",
+            {
+                "expression": "window.__wptrunner_accessibility_element",
+                "objectGroup": "wptrunner",
+            })
+        object_id = remote_object["result"]["objectId"]
+
+        try:
+            ax_tree = self.parent.cdp.execute_cdp_command(
+                "Accessibility.getPartialAXTree",
+                {
+                    "objectId": object_id,
+                    "fetchRelatives": True,
+                })
+        finally:
+            self.parent.cdp.execute_cdp_command(
+                "Runtime.releaseObject",
+                {"objectId": object_id})
+
+        if not ax_tree or not ax_tree.get("nodes"):
+            return {}
+
+        self._cache_nodes(ax_tree["nodes"])
+        return self._serialize_node(ax_tree["nodes"][0])
+
+    def get_accessibility_properties_for_accessibility_node(self, id):
+        node = self._nodes_by_id.get(id)
+        if node is None:
+            ax_tree = self.parent.cdp.execute_cdp_command("Accessibility.getFullAXTree")
+            self._cache_nodes(ax_tree.get("nodes", []))
+            node = self._nodes_by_id.get(id)
+
+        return self._serialize_node(node) if node else {}
+
+    def _cache_nodes(self, nodes):
+        parent_by_id = {}
+        for node in nodes:
+            for child_id in node.get("childIds", []):
+                parent_by_id[child_id] = node["nodeId"]
+
+        for node in nodes:
+            if "parentId" not in node and node["nodeId"] in parent_by_id:
+                node["parentId"] = parent_by_id[node["nodeId"]]
+            self._nodes_by_id[node["nodeId"]] = node
+
+    def _serialize_node(self, node):
+        rv = {
+            "accessibilityId": node["nodeId"],
+            "children": node.get("childIds", []),
+        }
+
+        # Pre-populate standard tri-states to avoid missing-key "undefined" assertion failures
+        standard_states = ["checked", "pressed", "selected", "expanded", "disabled", "required", "readonly"]
+        for state in standard_states:
+            rv[state] = "undefined"
+
+        if "parentId" in node:
+            rv["parent"] = node["parentId"]
+
+        # Parse native fields
+        if "role" in node:
+            rv["role"] = self._normalize_value(node["role"]).lower()
+        if "name" in node:
+            rv["label"] = self._normalize_value(node["name"])
+        if "value" in node:
+            rv["value"] = self._normalize_value(node["value"])
+        if "description" in node:
+            rv["description"] = self._normalize_value(node["description"])
+
+        # Override defaults with specific computed attributes from DevTools
+        for prop in node.get("properties", []):
+            rv[prop["name"]] = self._normalize_value(prop["value"])
+
+        return rv
+
+    def _normalize_value(self, value):
+        val = value.get("value")
+        if val is True:
+            return "true"
+        if val is False:
+            return "false"
+        if val is None:
+            return "undefined"
+        return str(val)
+
+
 class ChromeDriverDevToolsProtocolPart(ProtocolPart):
     """A low-level API for sending Chrome DevTools Protocol [0] commands directly to the browser.
 
@@ -244,6 +342,7 @@ class ChromeDriverTracingProtocolPart(ProtocolPart):
 
 class ChromeDriverProtocol(WebDriverProtocol):
     implements = [
+        ChromeDriverAccessibilityProtocolPart,
         ChromeDriverBaseProtocolPart,
         ChromeDriverDevToolsProtocolPart,
         ChromeDriverFedCMProtocolPart,
@@ -269,6 +368,7 @@ class ChromeDriverProtocol(WebDriverProtocol):
 
 class ChromeDriverBidiProtocol(WebDriverBidiProtocol):
     implements = [
+        ChromeDriverAccessibilityProtocolPart,
         ChromeDriverBaseProtocolPart,
         ChromeDriverDevToolsProtocolPart,
         ChromeDriverFedCMProtocolPart,
