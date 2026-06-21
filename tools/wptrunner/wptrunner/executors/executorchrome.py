@@ -3,6 +3,7 @@
 import collections
 import copy
 import json
+import logging
 import os
 import re
 import time
@@ -202,25 +203,29 @@ class ChromeDriverAccessibilityProtocolPart(WebDriverAccessibilityProtocolPart):
             "window.__wptrunner_accessibility_element = arguments[0];",
             args=[element])
         
-        remote_object = self.parent.cdp.execute_cdp_command(
-            "Runtime.evaluate",
-            {
-                "expression": "window.__wptrunner_accessibility_element",
-                "objectGroup": "wptrunner",
-            })
-        object_id = remote_object["result"]["objectId"]
-
+        ax_tree = None
         try:
-            ax_tree = self.parent.cdp.execute_cdp_command(
-                "Accessibility.getPartialAXTree",
+            remote_object = self.parent.cdp.execute_cdp_command(
+                "Runtime.evaluate",
                 {
-                    "objectId": object_id,
-                    "fetchRelatives": True,
+                    "expression": "window.__wptrunner_accessibility_element",
+                    "objectGroup": "wptrunner",
                 })
+            object_id = remote_object["result"]["objectId"]
+
+            try:
+                ax_tree = self.parent.cdp.execute_cdp_command(
+                    "Accessibility.getPartialAXTree",
+                    {
+                        "objectId": object_id,
+                        "fetchRelatives": True,
+                    })
+            finally:
+                self.parent.cdp.execute_cdp_command(
+                    "Runtime.releaseObject",
+                    {"objectId": object_id})
         finally:
-            self.parent.cdp.execute_cdp_command(
-                "Runtime.releaseObject",
-                {"objectId": object_id})
+            self.webdriver.execute_script("delete window.__wptrunner_accessibility_element;")
 
         if not ax_tree or not ax_tree.get("nodes"):
             return {}
@@ -231,6 +236,8 @@ class ChromeDriverAccessibilityProtocolPart(WebDriverAccessibilityProtocolPart):
     def get_accessibility_properties_for_accessibility_node(self, id):
         node = self._nodes_by_id.get(id)
         if node is None:
+            self.logger.warning(f"AX cache miss for node {id}. Requesting full AX tree.")
+
             ax_tree = self.parent.cdp.execute_cdp_command("Accessibility.getFullAXTree")
             self._cache_nodes(ax_tree.get("nodes", []))
             node = self._nodes_by_id.get(id)
@@ -253,9 +260,13 @@ class ChromeDriverAccessibilityProtocolPart(WebDriverAccessibilityProtocolPart):
             "accessibilityId": node["nodeId"],
             "children": node.get("childIds", []),
         }
+        # Pre-populate to avoid "undefined" assertion failures
 
-        # Pre-populate standard tri-states to avoid missing-key "undefined" assertion failures
-        standard_states = ["checked", "pressed", "selected", "expanded", "disabled", "required", "readonly"]
+        standard_states = [
+            "checked", "pressed", "selected", "expanded", 
+            "disabled", "required", "readonly", "hidden",
+            "current", "invalid", "live", "atomic", "busy"
+        ]
         for state in standard_states:
             rv[state] = "undefined"
 
@@ -272,7 +283,6 @@ class ChromeDriverAccessibilityProtocolPart(WebDriverAccessibilityProtocolPart):
         if "description" in node:
             rv["description"] = self._normalize_value(node["description"])
 
-        # Override defaults with specific computed attributes from DevTools
         for prop in node.get("properties", []):
             rv[prop["name"]] = self._normalize_value(prop["value"])
 

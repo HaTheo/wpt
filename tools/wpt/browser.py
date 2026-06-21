@@ -1905,24 +1905,28 @@ class Edge(Browser):
         "Darwin": "macos"
     }.get(uname[0])
 
-    def _edge_app_name(self, channel=None):
+    def _edge_app_suffix(self, channel=None):
         suffix = ""
         if channel in ("beta", "dev", "canary"):
             suffix = " " + channel.capitalize()
-        return f"Microsoft Edge{suffix}"
+        return suffix
+    
 
     def _find_binary_in_directory(self, directory, channel=None):
         """Search for an Edge browser binary in a given directory."""
-        app_name = self._edge_app_name(channel)
+        suffix = self._edge_app_suffix(channel)
 
         if self.platform == "macos":
-            mac_path = os.path.join(directory, f"{app_name}.app", "Contents", "MacOS")
-            return which(app_name, path=mac_path)
+            mac_app_name = f"Microsoft Edge{suffix}"
+            mac_path = os.path.join(directory, f"{mac_app_name}.app", "Contents", "MacOS")
+            return which(mac_app_name, path=mac_path)
 
         elif self.platform == "windows":
+            # TODO: Check this and make sure it works on Windows
             return which("msedge.exe", path=directory)
 
         else:
+            # TODO: CSheck this and make sure it works on Linux
             return which("msedge", path=directory)
 
     def _get_build_version(self, version):
@@ -1993,7 +1997,7 @@ class Edge(Browser):
             return None
 
     def find_binary(self, venv_path=None, channel=None):
-        # Check for binary in venv first.
+        # Check for binary in virtual environment first.
         path = self._find_binary_in_directory(self._get_browser_binary_dir(venv_path, channel))
         if path is not None:
             return path
@@ -2009,25 +2013,16 @@ class Edge(Browser):
             # No Canary on Linux.
             return which(name)
         if self.platform == "macos":
-            # app_name = self._edge_app_name(channel)
-            # return which(app_name,
-            #              path=os.path.join("/Applications",
-            #                                f"{app_name}.app",
-            #                                "Contents",
-            #                                "MacOS"))
-            suffix = ""
-            if channel in ("beta", "dev", "canary"):
-                suffix = " " + channel.capitalize()
+            suffix = self._edge_app_suffix(channel)
             path = f"/Applications/Microsoft Edge{suffix}.app/Contents/MacOS/Microsoft Edge{suffix}"
             return path if os.path.isfile(path) else None
         if self.platform == "win":
-            suffix = ""
-            if channel in ("beta", "dev"):
-                suffix = " " + channel.capitalize()
-            winpaths = [os.path.expandvars(fr"%PROGRAMFILES%\Microsoft\Edge{suffix}\Application"),
-                        os.path.expandvars(fr"%programfiles(x86)%\Microsoft\Edge{suffix}\Application")]
-            path = which("msedge.exe", path=os.pathsep.join(winpaths))
-            if channel == "canary":
+            if channel in ("stable", "beta", "dev"):
+                suffix = self._edge_app_suffix(channel)
+                winpaths = [os.path.expandvars(fr"%PROGRAMFILES%\Microsoft\Edge{suffix}\Application"),
+                            os.path.expandvars(fr"%programfiles(x86)%\Microsoft\Edge{suffix}\Application")]
+                path = which("msedge.exe", path=os.pathsep.join(winpaths))
+            elif channel == "canary":
                 path = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Edge SxS\Application\msedge.exe")
             return path if os.path.isfile(path) else None
         self.logger.warning("Unable to find the browser binary.")
